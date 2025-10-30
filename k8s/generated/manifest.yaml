@@ -1,0 +1,88 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: minio
+spec:
+  minio:
+    geoparquet:
+      accessKey:
+        key: access-key
+        name: artifacts-minio
+      bucket:
+        name: geoparquet
+      endpoint: minio.gis-team.svc.cluster.local:11000
+      events:
+        - s3:ObjectCreated:Put
+      insecure: true
+      secretKey:
+        key: secret-key
+        name: artifacts-minio
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: minio-sensor
+spec:
+  dependencies:
+    - eventName: geoparquet
+      eventSourceName: minio
+      name: geoparquet
+  triggers:
+    - template:
+        name: minio-sensor-trigger
+        argoWorkflow:
+          operation: submit
+          parameters:
+            - dest: spec.arguments.parameters.0.value  # Fixed typo: paramaters -> parameters
+              src:
+                dataKey: notification.0.s3.object.key
+                dependencyName: geoparquet
+          source:
+            resource:  # Removed duplicate 'source' key
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: plot-geoparquet-
+                namespace: gis-team
+              spec:
+                entrypoint: dag
+                arguments:
+                  parameters:
+                    - name: key
+                      value: OVERRIDEN
+                templates:
+                  - name: container-template
+                    inputs:
+                      parameters:
+                        - name: key
+                    container:
+                      image: ghcr.io/sbylemans/plot-geoparquet
+                      args:
+                        - 's3://geoparquet/{{inputs.parameters.key}}'
+                        - 's3://geoparquet/{{inputs.parameters.key}}.plot'
+                      env:
+                        - name: AWS_ACCESS_KEY_ID
+                          valueFrom:
+                            secretKeyRef:
+                              name: artifacts-minio
+                              key: access-key
+                        - name: AWS_SECRET_ACCESS_KEY
+                          valueFrom:
+                            secretKeyRef:
+                              name: artifacts-minio
+                              key: secret-key
+                        - name: BOTO3_ENDPOINT_URL
+                          value: http://minio:11000
+                  - name: dag
+                    dag:
+                      tasks:
+                        - name: plot
+                          template: container-template
+                          arguments:
+                            parameters:
+                              - name: key
+                                value: '{{workflow.parameters.key}}'
+                workflowMetadata:
+                  labels:
+                    team: gis

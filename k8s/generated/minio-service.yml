@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: minio
+  namespace: gis-team
+spec:
+  type: ExternalName
+  # https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds
+  externalName: host.docker.internal
+  ports:
+    - name: port-1
+      port: 11001
+    - name: port-2
+      port: 11000
