@@ -10,4 +10,4 @@ COPY requirements.txt .
 COPY plot.py .
 
 RUN pip install --no-cache-dir -r ./requirements.txt
-ENTRYPOINT python3 ./plot.py
+ENTRYPOINT ["python3", "./plot.py"]
