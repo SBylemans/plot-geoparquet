@@ -2,3 +2,4 @@ geopandas==1.1.1
 matplotlib==3.10.7
 pyarrow==22.0.0
 fsspec==2025.10.0
+s3fs==2025.10.0
