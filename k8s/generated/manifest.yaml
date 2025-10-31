@@ -72,7 +72,7 @@ spec:
                             secretKeyRef:
                               name: artifacts-minio
                               key: secret-key
-                        - name: BOTO3_ENDPOINT_URL
+                        - name: AWS_ENDPOINT_URL
                           value: http://minio:11000
                   - name: dag
                     dag:
