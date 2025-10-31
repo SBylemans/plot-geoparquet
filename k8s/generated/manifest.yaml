@@ -17,6 +17,8 @@ spec:
       secretKey:
         key: secret-key
         name: artifacts-minio
+      filter:
+        suffix: ".parquet"
 
 ---
 apiVersion: argoproj.io/v1alpha1
